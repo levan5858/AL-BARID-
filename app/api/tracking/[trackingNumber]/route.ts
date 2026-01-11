@@ -40,7 +40,7 @@ export async function GET(
       .get()
 
     // Format tracking history
-    const history = trackingHistorySnapshot.docs.map((doc) => {
+    const history = trackingHistorySnapshot.docs.map((doc: any) => {
       const entry = doc.data()
       return {
         status: entry.status,

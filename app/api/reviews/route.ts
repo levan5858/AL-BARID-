@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       .limit(50)
       .get()
 
-    const reviews = reviewsSnapshot.docs.map((doc) => {
+    const reviews = reviewsSnapshot.docs.map((doc: any) => {
       const data = doc.data()
       return {
         _id: doc.id,

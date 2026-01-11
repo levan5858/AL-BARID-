@@ -66,7 +66,7 @@ export default function ContactForm() {
         <div className="text-5xl mb-4">✓</div>
         <h3 className="text-2xl font-bold text-gray-900 mb-2">Message Sent Successfully!</h3>
         <p className="text-gray-600 mb-4">
-          Thank you for contacting us. We'll get back to you as soon as possible.
+          Thank you for contacting us. We&apos;ll get back to you as soon as possible.
         </p>
         <button
           onClick={() => setIsSubmitted(false)}

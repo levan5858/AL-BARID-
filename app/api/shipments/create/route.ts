@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate unique tracking number
-    let trackingNumber: string
+    let trackingNumber: string = ''
     let isUnique = false
     let attempts = 0
     const maxAttempts = 10
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
       attempts++
     }
     
-    if (!isUnique) {
+    if (!isUnique || !trackingNumber) {
       return NextResponse.json(
         { error: 'Failed to generate unique tracking number. Please try again.' },
         { status: 500 }

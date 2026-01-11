@@ -61,9 +61,9 @@ export interface Review {
 
 // Collection helpers
 export const collections = {
-  shipments: () => getFirestoreDB().collection('shipments') as Firestore.CollectionReference<Shipment>,
-  trackings: () => getFirestoreDB().collection('trackings') as Firestore.CollectionReference<Tracking>,
-  reviews: () => getFirestoreDB().collection('reviews') as Firestore.CollectionReference<Review>,
+  shipments: () => getFirestoreDB().collection('shipments'),
+  trackings: () => getFirestoreDB().collection('trackings'),
+  reviews: () => getFirestoreDB().collection('reviews'),
 }
 
 // Helper to convert Firestore Timestamp to Date
