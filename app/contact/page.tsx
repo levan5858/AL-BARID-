@@ -1,5 +1,6 @@
 import ContactForm from '@/components/ContactForm'
 import Map from '@/components/Map'
+import { PhoneIcon, EmailIcon, ClockIcon } from '@/components/Icons'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -25,14 +26,18 @@ export default function ContactPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
             <div className="bg-white rounded-lg shadow-md p-6 text-center">
-              <div className="text-4xl mb-4">📞</div>
+              <div className="flex justify-center mb-4 text-primary">
+                <PhoneIcon className="w-16 h-16" />
+              </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">Phone</h3>
               <p className="text-gray-600 mb-2">24/7 Customer Support</p>
               <p className="text-primary font-semibold">800-ALBARID</p>
               <p className="text-gray-600 mt-2">+971 4 XXX XXXX</p>
             </div>
             <div className="bg-white rounded-lg shadow-md p-6 text-center">
-              <div className="text-4xl mb-4">✉️</div>
+              <div className="flex justify-center mb-4 text-primary">
+                <EmailIcon className="w-16 h-16" />
+              </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">Email</h3>
               <p className="text-gray-600 mb-2">General Inquiries</p>
               <a href="mailto:info@albarid.com" className="text-primary font-semibold hover:underline">
@@ -40,7 +45,9 @@ export default function ContactPage() {
               </a>
             </div>
             <div className="bg-white rounded-lg shadow-md p-6 text-center">
-              <div className="text-4xl mb-4">🕐</div>
+              <div className="flex justify-center mb-4 text-primary">
+                <ClockIcon className="w-16 h-16" />
+              </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">Business Hours</h3>
               <p className="text-gray-600 mb-2">Sunday - Thursday</p>
               <p className="text-gray-900 font-semibold">9:00 AM - 6:00 PM</p>

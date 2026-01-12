@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { CheckCircleIcon } from '@/components/Icons'
 
 interface ContactFormData {
   name: string
@@ -63,7 +64,9 @@ export default function ContactForm() {
   if (isSubmitted) {
     return (
       <div className="bg-green-50 border border-green-200 rounded-lg p-8 text-center">
-        <div className="text-5xl mb-4">✓</div>
+        <div className="flex justify-center mb-4 text-green-600">
+          <CheckCircleIcon className="w-20 h-20" />
+        </div>
         <h3 className="text-2xl font-bold text-gray-900 mb-2">Message Sent Successfully!</h3>
         <p className="text-gray-600 mb-4">
           Thank you for contacting us. We&apos;ll get back to you as soon as possible.

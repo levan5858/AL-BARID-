@@ -1,5 +1,6 @@
 import HeroSection from '@/components/HeroSection'
 import NewsTicker from '@/components/NewsTicker'
+import { TruckIcon, LockIcon, PhoneIcon } from '@/components/Icons'
 
 export default function HomePage() {
   return (
@@ -24,21 +25,27 @@ export default function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
             <div className="text-center p-6 bg-white rounded-lg shadow-md">
-              <div className="text-4xl mb-4">🚚</div>
+              <div className="flex justify-center mb-4 text-primary">
+                <TruckIcon className="w-16 h-16" />
+              </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">Fast Delivery</h3>
               <p className="text-gray-600">
                 Express shipping options available for urgent deliveries across the region
               </p>
             </div>
             <div className="text-center p-6 bg-white rounded-lg shadow-md">
-              <div className="text-4xl mb-4">🔒</div>
+              <div className="flex justify-center mb-4 text-primary">
+                <LockIcon className="w-16 h-16" />
+              </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">Secure Handling</h3>
               <p className="text-gray-600">
                 Your packages are handled with care and fully insured for your peace of mind
               </p>
             </div>
             <div className="text-center p-6 bg-white rounded-lg shadow-md">
-              <div className="text-4xl mb-4">📱</div>
+              <div className="flex justify-center mb-4 text-primary">
+                <PhoneIcon className="w-16 h-16" />
+              </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">Real-Time Tracking</h3>
               <p className="text-gray-600">
                 Track your shipments 24/7 with our advanced tracking system

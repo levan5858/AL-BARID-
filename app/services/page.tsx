@@ -1,3 +1,4 @@
+import { TruckIcon, LightningIcon, CheckIcon } from '@/components/Icons'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -10,37 +11,37 @@ export default function ServicesPage() {
     {
       title: 'Domestic Shipping',
       description: 'Fast and reliable city-to-city shipping within the country. Door-to-door delivery with real-time tracking.',
-      icon: '🚚',
+      icon: <TruckIcon className="w-16 h-16" />,
       features: ['Same-day delivery available', 'Express and standard options', 'Insurance included'],
     },
     {
       title: 'International Shipping',
       description: 'Cross-border shipping services connecting the Middle East with global markets. Customs clearance included.',
-      icon: '✈️',
+      icon: <TruckIcon className="w-16 h-16" />,
       features: ['Worldwide coverage', 'Customs documentation', 'International tracking'],
     },
     {
       title: 'Freight Services',
       description: 'Bulk cargo and freight transportation for businesses. Full truckload and less-than-truckload options.',
-      icon: '📦',
+      icon: <TruckIcon className="w-16 h-16" />,
       features: ['Heavy cargo handling', 'Warehouse to warehouse', 'Competitive rates'],
     },
     {
       title: 'Express Delivery',
       description: 'Next-day and urgent delivery services for time-sensitive shipments. Priority handling guaranteed.',
-      icon: '⚡',
+      icon: <LightningIcon className="w-16 h-16" />,
       features: ['Next-day delivery', 'Priority handling', 'Guaranteed delivery times'],
     },
     {
       title: 'Warehousing Solutions',
       description: 'Secure storage facilities with inventory management. Distribution and fulfillment services available.',
-      icon: '🏭',
+      icon: <TruckIcon className="w-16 h-16" />,
       features: ['Secure storage', 'Inventory management', 'Distribution services'],
     },
     {
       title: 'Customs Clearance',
       description: 'Expert customs clearance services to ensure smooth cross-border shipments. Documentation assistance.',
-      icon: '📋',
+      icon: <CheckIcon className="w-16 h-16" />,
       features: ['Documentation support', 'Duty calculation', 'Fast clearance'],
     },
   ]
@@ -78,7 +79,9 @@ export default function ServicesPage() {
                 className="bg-white rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 overflow-hidden"
               >
                 <div className="bg-gradient-to-r from-primary to-primary-light p-8 text-center">
-                  <div className="text-6xl mb-4">{service.icon}</div>
+                  <div className="flex justify-center mb-4 text-white">
+                    {service.icon}
+                  </div>
                   <h3 className="text-2xl font-bold text-white mb-2">{service.title}</h3>
                 </div>
                 <div className="p-6">
@@ -86,7 +89,9 @@ export default function ServicesPage() {
                   <ul className="space-y-2">
                     {service.features.map((feature, featureIndex) => (
                       <li key={featureIndex} className="flex items-start text-gray-700">
-                        <span className="text-primary mr-2">✓</span>
+                        <span className="text-primary mr-2 mt-1">
+                          <CheckIcon className="w-5 h-5" />
+                        </span>
                         <span>{feature}</span>
                       </li>
                     ))}

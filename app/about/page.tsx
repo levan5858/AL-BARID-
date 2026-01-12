@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import { CheckIcon, LightningIcon, HandshakeIcon, StarIcon } from '@/components/Icons'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -87,27 +88,29 @@ export default function AboutPage() {
             {[
               {
                 title: 'Reliability',
-                icon: '✓',
+                icon: <CheckIcon className="w-12 h-12" />,
                 description: 'We deliver on our promises, ensuring your shipments arrive on time and in perfect condition.',
               },
               {
                 title: 'Speed',
-                icon: '⚡',
+                icon: <LightningIcon className="w-12 h-12" />,
                 description: 'Express delivery options and efficient routing to get your packages where they need to be, fast.',
               },
               {
                 title: 'Trust',
-                icon: '🤝',
+                icon: <HandshakeIcon className="w-12 h-12" />,
                 description: 'Building long-term relationships with our customers through transparent communication and honest service.',
               },
               {
                 title: 'Excellence',
-                icon: '⭐',
+                icon: <StarIcon className="w-12 h-12" />,
                 description: 'Striving for perfection in every aspect of our service, from handling to delivery.',
               },
             ].map((value, index) => (
               <div key={index} className="bg-white p-6 rounded-lg shadow-md text-center">
-                <div className="text-5xl mb-4">{value.icon}</div>
+                <div className="flex justify-center mb-4 text-primary">
+                  {value.icon}
+                </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">{value.title}</h3>
                 <p className="text-gray-600">{value.description}</p>
               </div>
