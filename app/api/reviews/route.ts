@@ -8,24 +8,53 @@ export async function GET(request: NextRequest) {
     await connectDB()
 
     const reviewsRef = collections.reviews()
-    // Note: This query requires a composite index: approved (asc) + createdAt (desc)
-    // Firestore will provide a link to create it automatically if missing
-    const reviewsSnapshot = await reviewsRef
-      .where('approved', '==', true)
-      .orderBy('createdAt', 'desc')
-      .limit(50)
-      .get()
+    
+    // Try the indexed query first
+    try {
+      const reviewsSnapshot = await reviewsRef
+        .where('approved', '==', true)
+        .orderBy('createdAt', 'desc')
+        .limit(50)
+        .get()
 
-    const reviews = reviewsSnapshot.docs.map((doc: any) => {
-      const data = doc.data()
-      return {
-        _id: doc.id,
-        ...data,
-        createdAt: data.createdAt ? convertTimestampToDate(data.createdAt).toISOString() : new Date().toISOString(),
-      }
-    })
+      const reviews = reviewsSnapshot.docs.map((doc: any) => {
+        const data = doc.data()
+        return {
+          _id: doc.id,
+          ...data,
+          createdAt: data.createdAt ? convertTimestampToDate(data.createdAt).toISOString() : new Date().toISOString(),
+        }
+      })
 
-    return NextResponse.json(reviews)
+      return NextResponse.json(reviews)
+    } catch (indexError: any) {
+      // If index doesn't exist, fallback to fetching all and filtering in memory
+      console.warn('Composite index not found, using fallback query:', indexError.message)
+      const allReviewsSnapshot = await reviewsRef
+        .limit(100)
+        .get()
+
+      const allReviews = allReviewsSnapshot.docs.map((doc: any) => {
+        const data = doc.data()
+        return {
+          _id: doc.id,
+          ...data,
+          createdAt: data.createdAt ? convertTimestampToDate(data.createdAt).toISOString() : new Date().toISOString(),
+        }
+      })
+
+      // Filter approved reviews and sort in memory
+      const approvedReviews = allReviews
+        .filter((review) => review.approved === true)
+        .sort((a, b) => {
+          const dateA = new Date(a.createdAt).getTime()
+          const dateB = new Date(b.createdAt).getTime()
+          return dateB - dateA
+        })
+        .slice(0, 50)
+
+      return NextResponse.json(approvedReviews)
+    }
   } catch (error) {
     console.error('Error fetching reviews:', error)
     return NextResponse.json(

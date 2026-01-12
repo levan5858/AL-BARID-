@@ -59,10 +59,12 @@ export default function TrackingResult({ tracking, isLoading, error }: TrackingR
   }
 
   const statusSteps = [
-    { key: 'Ordered', label: 'Ordered' },
+    { key: 'Pending', label: 'Pending' },
+    { key: 'Picked Up', label: 'Picked Up' },
     { key: 'In Transit', label: 'In Transit' },
     { key: 'Out for Delivery', label: 'Out for Delivery' },
     { key: 'Delivered', label: 'Delivered' },
+    { key: 'Exception', label: 'Exception' },
   ]
 
   const getStatusIndex = (status: string) => {
@@ -82,6 +84,8 @@ export default function TrackingResult({ tracking, isLoading, error }: TrackingR
           tracking.status === 'Delivered' ? 'bg-green-100 text-green-800' :
           tracking.status === 'Out for Delivery' ? 'bg-blue-100 text-blue-800' :
           tracking.status === 'In Transit' ? 'bg-yellow-100 text-yellow-800' :
+          tracking.status === 'Picked Up' ? 'bg-purple-100 text-purple-800' :
+          tracking.status === 'Exception' ? 'bg-red-100 text-red-800' :
           'bg-gray-100 text-gray-800'
         }`}>
           Status: {tracking.status}
@@ -97,27 +101,34 @@ export default function TrackingResult({ tracking, isLoading, error }: TrackingR
           
           <div className="space-y-6">
             {statusSteps.map((step, index) => {
-              const isCompleted = index <= currentStatusIndex
+              const isCompleted = index <= currentStatusIndex && tracking.status !== 'Exception'
               const isCurrent = index === currentStatusIndex
+              const isException = tracking.status === 'Exception' && step.key === 'Exception'
               
               return (
                 <div key={step.key} className="relative flex items-start">
                   {/* Timeline Dot */}
                   <div className={`relative z-10 w-8 h-8 rounded-full flex items-center justify-center ${
+                    isException ? 'bg-red-500' :
                     isCompleted ? 'bg-primary' : 'bg-gray-300'
                   }`}>
-                    {isCompleted && (
+                    {isCompleted && !isException && (
                       <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                    {isException && (
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                       </svg>
                     )}
                   </div>
                   
                   <div className="ml-4 flex-1">
-                    <div className={`font-semibold ${isCompleted ? 'text-gray-900' : 'text-gray-400'}`}>
+                    <div className={`font-semibold ${isCompleted || isException ? 'text-gray-900' : 'text-gray-400'}`}>
                       {step.label}
                     </div>
-                    {isCurrent && tracking.history.length > 0 && (
+                    {(isCurrent || isException) && tracking.history.length > 0 && (
                       <div className="mt-2 text-sm text-gray-600">
                         <p>{tracking.currentLocation}</p>
                         <p className="text-gray-500">{tracking.history[tracking.history.length - 1]?.timestamp}</p>

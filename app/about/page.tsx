@@ -1,34 +1,127 @@
+'use client'
+
 import Image from 'next/image'
 import { CheckIcon, LightningIcon, HandshakeIcon, StarIcon } from '@/components/Icons'
-import type { Metadata } from 'next'
+import { motion, useInView } from 'framer-motion'
+import { useRef } from 'react'
 
-export const metadata: Metadata = {
-  title: 'About Us - Al Barid Logistics',
-  description: 'Learn about Al Barid Logistics history, values, and why we are the trusted logistics partner across the Middle East.',
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.2,
+      delayChildren: 0.1,
+    },
+  },
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 30 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      ease: 'easeOut' as const,
+    },
+  },
+}
+
+const timelineItemVariants = {
+  hidden: { opacity: 0, x: -50 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      duration: 0.6,
+      ease: 'easeOut' as const,
+    },
+  },
+}
+
+function TimelineItem({ item, index }: { item: any; index: number }) {
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true, margin: '-100px' })
+
+  return (
+    <motion.div
+      ref={ref}
+      initial="hidden"
+      animate={isInView ? 'visible' : 'hidden'}
+      variants={timelineItemVariants}
+      className="relative flex items-start pl-8 md:pl-0"
+    >
+      {/* Timeline Dot */}
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={isInView ? { scale: 1 } : { scale: 0 }}
+        transition={{ delay: 0.3, type: 'spring', stiffness: 200 }}
+        className="absolute left-0 md:left-1/2 transform md:-translate-x-1/2 w-8 h-8 bg-accent rounded-full border-4 border-primary z-10"
+      ></motion.div>
+      <div className="ml-6 md:ml-0 flex-1">
+        <div className={`w-full ${index % 2 === 0 ? 'md:w-1/2 md:pr-8' : 'md:w-1/2 md:ml-auto md:pl-8'} mb-4 md:mb-0`}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
+            transition={{ delay: 0.4 }}
+            className="bg-gray-50 p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300"
+          >
+            <div className="text-primary font-bold text-lg mb-2">{item.year}</div>
+            <h3 className="text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
+            <p className="text-gray-600">{item.description}</p>
+          </motion.div>
+        </div>
+      </div>
+    </motion.div>
+  )
 }
 
 export default function AboutPage() {
+  const valuesRef = useRef(null)
+  const reasonsRef = useRef(null)
+  const valuesInView = useInView(valuesRef, { once: true, margin: '-50px' })
+  const reasonsInView = useInView(reasonsRef, { once: true, margin: '-50px' })
+
   return (
     <>
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary-dark to-primary text-white py-20">
+      <motion.section
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="bg-gradient-to-r from-primary-dark to-primary text-white py-20"
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="text-4xl sm:text-5xl font-bold mb-4">About Us</h1>
           <p className="text-xl text-gray-100">
             Delivering Excellence in Logistics Since Our Inception
           </p>
         </div>
-      </section>
+      </motion.section>
 
       {/* Company History Timeline */}
       <section className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
+          <motion.h2
+            initial={{ opacity: 0, y: -20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-3xl font-bold text-center mb-12 text-gray-900"
+          >
             Our History
-          </h2>
+          </motion.h2>
           <div className="relative">
             {/* Timeline Line */}
-            <div className="absolute left-8 md:left-1/2 transform md:-translate-x-1/2 w-1 h-full bg-primary"></div>
+            <motion.div
+              initial={{ scaleY: 0 }}
+              whileInView={{ scaleY: 1 }}
+              viewport={{ once: true }}
+              transition={{ duration: 1, ease: 'easeInOut' }}
+              className="absolute left-8 md:left-1/2 transform md:-translate-x-1/2 w-1 h-full bg-primary origin-top"
+            ></motion.div>
             
             {/* Timeline Items */}
             <div className="space-y-12">
@@ -59,19 +152,7 @@ export default function AboutPage() {
                   description: 'Recognized as a leader in logistics innovation, serving thousands of customers with excellence and reliability.',
                 },
               ].map((item, index) => (
-                <div key={index} className="relative flex items-start pl-8 md:pl-0">
-                  {/* Timeline Dot */}
-                  <div className="absolute left-0 md:left-1/2 transform md:-translate-x-1/2 w-8 h-8 bg-accent rounded-full border-4 border-primary z-10"></div>
-                  <div className="ml-6 md:ml-0 flex-1">
-                    <div className={`w-full ${index % 2 === 0 ? 'md:w-1/2 md:pr-8' : 'md:w-1/2 md:ml-auto md:pl-8'} mb-4 md:mb-0`}>
-                      <div className="bg-gray-50 p-6 rounded-lg shadow-md">
-                        <div className="text-primary font-bold text-lg mb-2">{item.year}</div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">{item.title}</h3>
-                        <p className="text-gray-600">{item.description}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <TimelineItem key={index} item={item} index={index} />
               ))}
             </div>
           </div>
@@ -79,12 +160,22 @@ export default function AboutPage() {
       </section>
 
       {/* Company Values */}
-      <section className="py-16 bg-gray-50">
+      <section ref={valuesRef} className="py-16 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
+          <motion.h2
+            initial={{ opacity: 0, y: -20 }}
+            animate={valuesInView ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
+            transition={{ duration: 0.6 }}
+            className="text-3xl font-bold text-center mb-12 text-gray-900"
+          >
             Our Core Values
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          </motion.h2>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate={valuesInView ? 'visible' : 'hidden'}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+          >
             {[
               {
                 title: 'Reliability',
@@ -107,25 +198,40 @@ export default function AboutPage() {
                 description: 'Striving for perfection in every aspect of our service, from handling to delivery.',
               },
             ].map((value, index) => (
-              <div key={index} className="bg-white p-6 rounded-lg shadow-md text-center">
+              <motion.div
+                key={index}
+                variants={itemVariants}
+                whileHover={{ scale: 1.05, y: -5 }}
+                className="bg-white p-6 rounded-lg shadow-md text-center"
+              >
                 <div className="flex justify-center mb-4 text-primary">
                   {value.icon}
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">{value.title}</h3>
                 <p className="text-gray-600">{value.description}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Why Choose Us */}
-      <section className="py-16 bg-white">
+      <section ref={reasonsRef} className="py-16 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12 text-gray-900">
+          <motion.h2
+            initial={{ opacity: 0, y: -20 }}
+            animate={reasonsInView ? { opacity: 1, y: 0 } : { opacity: 0, y: -20 }}
+            transition={{ duration: 0.6 }}
+            className="text-3xl font-bold text-center mb-12 text-gray-900"
+          >
             Why Choose Al Barid Logistics?
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          </motion.h2>
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate={reasonsInView ? 'visible' : 'hidden'}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+          >
             {[
               {
                 title: 'Extensive Network',
@@ -152,12 +258,17 @@ export default function AboutPage() {
                 description: 'Tailored shipping solutions to meet your specific business or personal needs.',
               },
             ].map((reason, index) => (
-              <div key={index} className="p-6 border-l-4 border-primary bg-gray-50 rounded-r-lg">
+              <motion.div
+                key={index}
+                variants={itemVariants}
+                whileHover={{ scale: 1.02, x: 5 }}
+                className="p-6 border-l-4 border-primary bg-gray-50 rounded-r-lg"
+              >
                 <h3 className="text-xl font-bold text-gray-900 mb-3">{reason.title}</h3>
                 <p className="text-gray-600">{reason.description}</p>
-              </div>
+              </motion.div>
             ))}
-          </div>
+          </motion.div>
         </div>
       </section>
     </>

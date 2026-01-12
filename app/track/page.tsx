@@ -84,7 +84,7 @@ function TrackPageContent() {
         estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString(),
         history: [
           {
-            status: 'Ordered',
+            status: 'Pending',
             location: 'Riyadh, Saudi Arabia',
             timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toLocaleString(),
             description: 'Shipment created and collected',
