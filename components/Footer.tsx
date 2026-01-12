@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function Footer() {
   const currentYear = new Date().getFullYear()
@@ -9,7 +10,16 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="col-span-1 md:col-span-2">
-            <h3 className="text-white text-xl font-bold mb-4">Al Barid Logistics</h3>
+            <div className="flex items-center space-x-3 mb-4">
+              <Image 
+                src="/images/logo/logo.svg" 
+                alt="Al Barid Logistics Logo" 
+                width={40} 
+                height={40}
+                className="w-10 h-10"
+              />
+              <h3 className="text-white text-xl font-bold">Al Barid Logistics</h3>
+            </div>
             <p className="mb-4">
               Your trusted partner for reliable and efficient logistics solutions across the Middle East. 
               We deliver excellence in every shipment.

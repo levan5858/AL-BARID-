@@ -35,7 +35,7 @@ export interface Shipment {
     insurance: boolean
     specialInstructions: string
   }
-  status: 'Ordered' | 'In Transit' | 'Out for Delivery' | 'Delivered'
+  status: 'Pending' | 'Picked Up' | 'In Transit' | 'Out for Delivery' | 'Delivered' | 'Exception'
   currentLocation: string
   estimatedDelivery: FirestoreTimestamp | Date
   createdAt?: FirestoreTimestamp | Date
@@ -44,7 +44,7 @@ export interface Shipment {
 
 export interface Tracking {
   trackingNumber: string
-  status: 'Ordered' | 'In Transit' | 'Out for Delivery' | 'Delivered'
+  status: 'Pending' | 'Picked Up' | 'In Transit' | 'Out for Delivery' | 'Delivered' | 'Exception'
   location: string
   timestamp: FirestoreTimestamp | Date
   description: string

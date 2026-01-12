@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
       receiver,
       packageDetails,
       deliveryOptions,
-      status: 'Ordered',
+          status: 'Pending',
       currentLocation: `${sender.city}, ${sender.country}`,
       estimatedDelivery,
     }
@@ -84,13 +84,13 @@ export async function POST(request: NextRequest) {
     })
 
     // Create initial tracking entry
-    const trackingData: Tracking = {
-      trackingNumber,
-      status: 'Ordered',
-      location: `${sender.city}, ${sender.country}`,
-      description: 'Shipment created and collected',
-      timestamp: Timestamp.fromDate(now),
-    }
+        const trackingData: Tracking = {
+          trackingNumber,
+          status: 'Pending',
+          location: `${sender.city}, ${sender.country}`,
+          description: 'Shipment created and collected',
+          timestamp: Timestamp.fromDate(now),
+        }
 
     // Save tracking to Firestore
     const trackingsRef = collections.trackings()

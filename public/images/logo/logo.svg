@@ -1,0 +1,11 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Bird Logo - Blue and Orange -->
+  <path d="M60 20 L80 40 L75 50 L60 45 L45 50 L40 40 Z" fill="#3B82F6" stroke="#1E3A8A" stroke-width="2"/>
+  <path d="M40 40 L60 50 L60 70 L50 80 L40 75 Z" fill="#F97316" stroke="#EA580C" stroke-width="2"/>
+  <path d="M60 50 L80 40 L85 50 L80 60 L70 65 L60 70 Z" fill="#3B82F6" stroke="#1E3A8A" stroke-width="2"/>
+  <path d="M50 80 L60 70 L70 65 L75 75 L70 85 L60 90 L50 85 Z" fill="#F97316" stroke="#EA580C" stroke-width="2"/>
+  <!-- Beak -->
+  <path d="M80 40 L90 35 L85 40 Z" fill="#FBBF24"/>
+  <!-- Eye -->
+  <circle cx="70" cy="45" r="3" fill="#1E3A8A"/>
+</svg>
