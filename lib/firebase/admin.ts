@@ -5,6 +5,7 @@ let app: App | undefined
 let db: Firestore | undefined
 
 function getFirebaseAdmin() {
+  // Return cached if available
   if (app && db) {
     return { app, db }
   }
@@ -21,8 +22,24 @@ function getFirebaseAdmin() {
   const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT
 
   if (!serviceAccountEnv) {
+    // Check if we're in build phase - if so, throw a build-friendly error
+    const isBuildPhase = typeof window === 'undefined' && 
+                        (process.env.NEXT_PHASE === 'phase-production-build' || 
+                         process.env.NEXT_PHASE === 'phase-development-build')
+    
+    if (isBuildPhase) {
+      // During build, env vars might not be available
+      // This is expected - throw a clear error that explains this
+      throw new Error(
+        'FIREBASE_SERVICE_ACCOUNT environment variable is required but not available during build. ' +
+        'This is expected behavior. Please ensure the variable is set in your deployment platform ' +
+        '(Vercel: Project Settings → Environment Variables). The app will work correctly at runtime.'
+      )
+    }
+    
     throw new Error(
-      'Please define the FIREBASE_SERVICE_ACCOUNT environment variable inside .env.local'
+      'Please define the FIREBASE_SERVICE_ACCOUNT environment variable. ' +
+      'For Vercel: Add it in Project Settings → Environment Variables.'
     )
   }
 

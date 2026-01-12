@@ -9,7 +9,16 @@ async function connectDB() {
   try {
     const db = getFirestoreDB()
     return db
-  } catch (error) {
+  } catch (error: any) {
+    // During build time, env vars might not be available
+    // This is expected and will work at runtime
+    if (typeof window === 'undefined' && process.env.NEXT_PHASE === 'phase-production-build') {
+      // Re-throw with a clearer message
+      throw new Error(
+        'Firebase connection cannot be established during build. ' +
+        'This is expected - ensure FIREBASE_SERVICE_ACCOUNT is set in Vercel environment variables.'
+      )
+    }
     console.error('Firebase connection error:', error)
     throw error
   }
