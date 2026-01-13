@@ -47,8 +47,11 @@ interface TrackingResultProps {
 
 export default function TrackingResult({ tracking, isLoading, error }: TrackingResultProps) {
   const timelineRef = useRef(null)
-  const isInView = useInView(timelineRef, { once: true, margin: '-50px' })
+  const isInView = useInView(timelineRef, { once: true, margin: '-100px' })
   const [animatedProgress, setAnimatedProgress] = useState(0)
+  
+  // Ensure history is always an array
+  const history = tracking?.history && Array.isArray(tracking.history) ? tracking.history : []
 
   const statusSteps = [
     { key: 'Pending', label: 'Pending', icon: '📋' },
@@ -195,12 +198,12 @@ export default function TrackingResult({ tracking, isLoading, error }: TrackingR
       <div className="mb-8" ref={timelineRef}>
         <h3 className="text-lg font-bold text-gray-900 mb-6">Shipping Status</h3>
         
-        {tracking.history.length > 0 ? (
+        {history && history.length > 0 ? (
           <div className="relative pl-8 md:pl-12">
             {/* Vertical Timeline Line Background */}
             <motion.div
               initial={{ scaleY: 0 }}
-              animate={isInView ? { scaleY: 1 } : { scaleY: 0 }}
+              animate={{ scaleY: 1 }}
               transition={{ duration: 0.8, ease: 'easeInOut' }}
               className="absolute left-4 md:left-6 top-0 bottom-0 w-1 bg-gray-200 origin-top"
             ></motion.div>
@@ -208,26 +211,34 @@ export default function TrackingResult({ tracking, isLoading, error }: TrackingR
             {/* Animated Progress Fill */}
             <motion.div
               initial={{ scaleY: 0 }}
-              animate={isInView ? { scaleY: 1 } : { scaleY: 0 }}
+              animate={{ scaleY: 1 }}
               transition={{ duration: 1.5, ease: 'easeInOut', delay: 0.3 }}
               className="absolute left-4 md:left-6 top-0 w-1 bg-primary origin-top"
               style={{ 
-                height: tracking.history.length > 0 
-                  ? `${(tracking.history.length / (tracking.history.length + 1)) * 100}%` 
+                height: history.length > 0 
+                  ? `${(history.length / (history.length + 1)) * 100}%` 
                   : '0%' 
               }}
             ></motion.div>
 
             {/* Timeline Items from History */}
             <div className="space-y-6">
-              {tracking.history.map((entry, index) => {
-                const entryStatus = entry.status
+              {history.map((entry, index) => {
+                const entryStatus = entry.status || 'Pending'
                 const statusIndex = getStatusIndex(entryStatus)
                 const isCompleted = statusIndex <= currentStatusIndex
-                const isLast = index === tracking.history.length - 1
+                const isLast = index === history.length - 1
                 
-                // Format date nicely
-                const date = new Date(entry.timestamp)
+                // Format date nicely - handle invalid dates
+                let date: Date
+                try {
+                  date = new Date(entry.timestamp)
+                  if (isNaN(date.getTime())) {
+                    date = new Date()
+                  }
+                } catch {
+                  date = new Date()
+                }
                 const formattedDate = date.toLocaleDateString('en-US', {
                   year: 'numeric',
                   month: 'long',
@@ -242,14 +253,14 @@ export default function TrackingResult({ tracking, isLoading, error }: TrackingR
                   <motion.div
                     key={index}
                     initial={{ opacity: 0, x: -30 }}
-                    animate={isInView ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }}
+                    animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.15, duration: 0.6 }}
                     className="relative flex items-start"
                   >
                     {/* Timeline Node */}
                     <motion.div
                       initial={{ scale: 0 }}
-                      animate={isInView ? { scale: 1 } : { scale: 0 }}
+                      animate={{ scale: 1 }}
                       transition={{ 
                         type: 'spring', 
                         stiffness: 200,
@@ -279,7 +290,7 @@ export default function TrackingResult({ tracking, isLoading, error }: TrackingR
                     <div className="ml-8 md:ml-12 flex-1">
                       <motion.div
                         initial={{ opacity: 0 }}
-                        animate={isInView ? { opacity: 1 } : { opacity: 0 }}
+                        animate={{ opacity: 1 }}
                         transition={{ delay: index * 0.15 + 0.4 }}
                         className="bg-white rounded-lg shadow-sm p-5 border-l-4 border-primary"
                       >
@@ -290,7 +301,7 @@ export default function TrackingResult({ tracking, isLoading, error }: TrackingR
                         </h4>
                         <div className="space-y-2 text-sm">
                           <p className="text-gray-700">
-                            <strong>Location:</strong> {entry.location}
+                            <strong>Location:</strong> {entry.location || tracking.currentLocation || 'Unknown'}
                           </p>
                           <p className="text-gray-600">
                             <strong>Date:</strong> {formattedDate} at {formattedTime}
@@ -309,13 +320,13 @@ export default function TrackingResult({ tracking, isLoading, error }: TrackingR
             </div>
 
             {/* Moving Package Icon (animated along timeline) */}
-            {tracking.history.length > 0 && (
+            {history.length > 0 && (
               <motion.div
                 initial={{ top: 0, opacity: 0 }}
-                animate={isInView ? { 
-                  top: `${Math.min((tracking.history.length / (tracking.history.length + 1)) * 100, 100)}%`, 
+                animate={{ 
+                  top: `${Math.min((history.length / (history.length + 1)) * 100, 100)}%`, 
                   opacity: 1 
-                } : { top: 0, opacity: 0 }}
+                }}
                 transition={{ duration: 1.5, ease: 'easeInOut', delay: 0.5 }}
                 className="absolute left-4 md:left-6 transform -translate-x-1/2 -translate-y-1/2 z-20"
               >
@@ -337,8 +348,62 @@ export default function TrackingResult({ tracking, isLoading, error }: TrackingR
             )}
           </div>
         ) : (
-          <div className="text-center py-8 text-gray-500">
-            <p>No tracking history available yet.</p>
+          // Show current status even if no history
+          <div className="relative pl-8 md:pl-12">
+            <motion.div
+              initial={{ scaleY: 0 }}
+              animate={{ scaleY: 1 }}
+              transition={{ duration: 0.8, ease: 'easeInOut' }}
+              className="absolute left-4 md:left-6 top-0 bottom-0 w-1 bg-gray-200 origin-top"
+            ></motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.6 }}
+              className="relative flex items-start"
+            >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 200, delay: 0.3 }}
+                className="absolute left-0 transform -translate-x-1/2 w-8 h-8 rounded-full flex items-center justify-center z-10 bg-primary"
+                style={{ left: '16px' }}
+              >
+                <motion.svg
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="w-5 h-5 text-white"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </motion.svg>
+              </motion.div>
+
+              <div className="ml-8 md:ml-12 flex-1">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                  className="bg-white rounded-lg shadow-sm p-5 border-l-4 border-primary"
+                >
+                  <h4 className="text-lg font-bold mb-3 text-primary">
+                    {tracking.status}
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <p className="text-gray-700">
+                      <strong>Location:</strong> {tracking.currentLocation}
+                    </p>
+                    <p className="text-gray-600">
+                      <strong>Status:</strong> {tracking.status}
+                    </p>
+                  </div>
+                </motion.div>
+              </div>
+            </motion.div>
           </div>
         )}
       </div>

@@ -65,18 +65,21 @@ export async function GET(
     }
 
     // Format tracking history and sort chronologically (oldest first for display)
-    const history = trackingHistorySnapshot.docs.map((doc: any) => {
-      const entry = doc.data()
-      return {
-        status: entry.status,
-        location: entry.location,
-        timestamp: convertTimestampToDate(entry.timestamp).toISOString(),
-        description: entry.description || '',
-      }
-    }).sort((a, b) => {
-      // Sort by timestamp ascending (oldest first)
-      return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    })
+    // Ensure history is always an array, never undefined
+    const history = trackingHistorySnapshot.docs && trackingHistorySnapshot.docs.length > 0
+      ? trackingHistorySnapshot.docs.map((doc: any) => {
+          const entry = doc.data()
+          return {
+            status: entry.status || 'Pending',
+            location: entry.location || shipment.currentLocation || `${shipment.sender?.city || ''}, ${shipment.sender?.country || ''}`,
+            timestamp: entry.timestamp ? convertTimestampToDate(entry.timestamp).toISOString() : new Date().toISOString(),
+            description: entry.description || '',
+          }
+        }).sort((a, b) => {
+          // Sort by timestamp ascending (oldest first)
+          return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+        })
+      : [] // Always return an array, never undefined
 
     // Build response with complete shipment data
     const estimatedDeliveryDate = convertTimestampToDate(shipment.estimatedDelivery)
@@ -86,7 +89,7 @@ export async function GET(
       status: shipment.status || 'Pending',
       currentLocation: shipment.currentLocation || `${shipment.sender?.city || ''}, ${shipment.sender?.country || ''}`,
       estimatedDelivery: estimatedDeliveryDate.toISOString().split('T')[0],
-      history,
+      history: history || [], // Ensure it's always an array
       sender: {
         name: shipment.sender?.name || '',
         email: shipment.sender?.email || '',
