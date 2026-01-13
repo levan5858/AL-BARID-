@@ -447,16 +447,19 @@ export default function AdminPage() {
     setSelectedShipment(shipment)
     try {
       const response = await fetch(`/api/admin/shipments/${shipment.trackingNumber}`)
-      if (response.ok) {
-        const data = await response.json()
-        setShipmentHistory(data.history || [])
-        setShowHistoryModal(true)
-      } else {
-        alert('Failed to load tracking history')
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        alert(`Failed to load tracking history: ${errorData.error || 'Unknown error'}`)
+        return
       }
+      
+      const data = await response.json()
+      setShipmentHistory(data.history || [])
+      setShowHistoryModal(true)
     } catch (error) {
       console.error('Error fetching history:', error)
-      alert('Failed to load tracking history')
+      alert(`Failed to load tracking history: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
   }
 

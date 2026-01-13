@@ -10,9 +10,24 @@ export async function GET(
   try {
     await connectDB()
 
-    const { trackingNumber } = params
+    // Normalize tracking number (uppercase, trim)
+    const normalizedTracking = params.trackingNumber.trim().toUpperCase()
     const shipmentsRef = collections.shipments()
-    const shipmentDoc = await shipmentsRef.doc(trackingNumber).get()
+    
+    // Try exact match first
+    let shipmentDoc = await shipmentsRef.doc(normalizedTracking).get()
+    
+    // If not found, try case-insensitive search
+    if (!shipmentDoc.exists) {
+      const allShipmentsSnapshot = await shipmentsRef.limit(500).get()
+      for (const doc of allShipmentsSnapshot.docs) {
+        const data = doc.data()
+        if (data.trackingNumber && data.trackingNumber.toUpperCase() === normalizedTracking) {
+          shipmentDoc = doc
+          break
+        }
+      }
+    }
 
     if (!shipmentDoc.exists) {
       return NextResponse.json(
@@ -22,33 +37,57 @@ export async function GET(
     }
 
     const shipment = shipmentDoc.data()
+    if (!shipment) {
+      return NextResponse.json(
+        { error: 'Shipment not found' },
+        { status: 404 }
+      )
+    }
     
-    // Get tracking history
+    // Get tracking history - use actual tracking number from shipment
+    const actualTrackingNumber = shipment.trackingNumber || normalizedTracking
     const trackingsRef = collections.trackings()
-    const trackingHistorySnapshot = await trackingsRef
-      .where('trackingNumber', '==', trackingNumber)
-      .orderBy('timestamp', 'desc')
-      .get()
+    let trackingHistorySnapshot
+    
+    try {
+      // Try ordered query first (requires index)
+      trackingHistorySnapshot = await trackingsRef
+        .where('trackingNumber', '==', actualTrackingNumber)
+        .orderBy('timestamp', 'desc')
+        .get()
+    } catch (indexError: any) {
+      // If index missing, get all and sort in memory
+      console.warn('Tracking index not found, using fallback query:', indexError.message)
+      const allTrackingsSnapshot = await trackingsRef
+        .where('trackingNumber', '==', actualTrackingNumber)
+        .get()
+      
+      trackingHistorySnapshot = allTrackingsSnapshot
+    }
 
+    // Format tracking history and sort chronologically (newest first for admin)
     const history = trackingHistorySnapshot.docs.map((doc: any) => {
       const entry = doc.data()
       return {
         id: doc.id,
-        status: entry.status,
-        location: entry.location,
-        description: entry.description,
+        status: entry.status || 'Pending',
+        location: entry.location || '',
+        description: entry.description || '',
         timestamp: entry.timestamp?.toDate?.() ? entry.timestamp.toDate().toISOString() : new Date().toISOString(),
       }
+    }).sort((a, b) => {
+      // Sort by timestamp descending (newest first)
+      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     })
 
     return NextResponse.json({
       ...shipment,
-      history,
+      history: history || [], // Ensure it's always an array
     })
   } catch (error) {
     console.error('Error fetching shipment:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch shipment' },
+      { error: 'Failed to fetch shipment', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
