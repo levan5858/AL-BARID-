@@ -55,85 +55,57 @@ function TrackPageContent() {
   }, [queryParam])
 
   const fetchTracking = async (trackingNumber: string) => {
-    setIsLoading((prev) => new Map(prev).set(trackingNumber, true))
+    // Normalize tracking number (uppercase, trim)
+    const normalizedTracking = trackingNumber.trim().toUpperCase()
+    
+    setIsLoading((prev) => new Map(prev).set(normalizedTracking, true))
     setErrors((prev) => {
       const newMap = new Map(prev)
-      newMap.delete(trackingNumber)
+      newMap.delete(normalizedTracking)
       return newMap
     })
 
     try {
-      // Normalize tracking number (uppercase, trim)
-      const normalizedTracking = trackingNumber.trim().toUpperCase()
-      
       const response = await fetch(`/api/tracking/${normalizedTracking}`)
 
       if (!response.ok) {
-        throw new Error('Tracking number not found')
+        const errorData = await response.json().catch(() => ({ error: 'Tracking number not found' }))
+        throw new Error(errorData.error || 'Tracking number not found')
       }
 
       const data = await response.json()
-      setTrackingResults((prev) => new Map(prev).set(normalizedTracking, data))
-    } catch (err) {
-      console.error('Error fetching tracking:', err)
-      setErrors((prev) => new Map(prev).set(trackingNumber, 'Tracking number not found'))
-      setTrackingResults((prev) => new Map(prev).set(trackingNumber, null))
       
-      // Generate mock data for demo
-      const mockData: TrackingStatus = {
-        trackingNumber,
-        status: 'In Transit',
-        currentLocation: 'Dubai, UAE',
-        estimatedDelivery: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-        history: [
-          {
-            status: 'Pending',
-            location: 'Riyadh, Saudi Arabia',
-            timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toLocaleString(),
-            description: 'Shipment created and collected',
-          },
-          {
-            status: 'In Transit',
-            location: 'Dubai, UAE',
-            timestamp: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toLocaleString(),
-            description: 'Package in transit to destination',
-          },
-        ],
-        sender: {
-          name: 'Sample Sender',
-          city: 'Riyadh',
-          country: 'Saudi Arabia',
-        },
-        receiver: {
-          name: 'Sample Receiver',
-          city: 'Dubai',
-          country: 'UAE',
-        },
-        packageDetails: {
-          weight: 5.5,
-          dimensions: '30 x 20 x 15 cm',
-          contents: 'Electronics',
-        },
+      // Verify we got valid data
+      if (!data || !data.trackingNumber) {
+        throw new Error('Invalid tracking data received')
       }
-      setTrackingResults((prev) => new Map(prev).set(trackingNumber, mockData))
+      
+      setTrackingResults((prev) => new Map(prev).set(normalizedTracking, data))
       setErrors((prev) => {
         const newMap = new Map(prev)
-        newMap.delete(trackingNumber)
+        newMap.delete(normalizedTracking)
         return newMap
       })
+    } catch (err) {
+      console.error('Error fetching tracking:', err)
+      const errorMessage = err instanceof Error ? err.message : 'Tracking number not found'
+      setErrors((prev) => new Map(prev).set(normalizedTracking, errorMessage))
+      setTrackingResults((prev) => new Map(prev).set(normalizedTracking, null))
+      // Removed mock data fallback - show actual error instead
     } finally {
-      setIsLoading((prev) => new Map(prev).set(trackingNumber, false))
+      setIsLoading((prev) => new Map(prev).set(normalizedTracking, false))
     }
   }
 
   const handleTrack = (trackingNumber: string) => {
-    const numbers = trackingNumber.split(',').map((n) => n.trim()).filter((n) => n)
+    const numbers = trackingNumber.split(',').map((n) => n.trim().toUpperCase()).filter((n) => n)
     if (numbers.length === 0) return
 
     setTrackingNumbers(numbers)
     numbers.forEach((num) => {
-      if (!trackingResults.has(num) && !isLoading.get(num)) {
-        fetchTracking(num)
+      const normalized = num.trim().toUpperCase()
+      if (!trackingResults.has(normalized) && !isLoading.get(normalized)) {
+        fetchTracking(normalized)
       }
     })
   }
