@@ -25,6 +25,7 @@ interface Shipment {
   }
   status: 'Pending' | 'Picked Up' | 'In Transit' | 'Out for Delivery' | 'Delivered' | 'Exception'
   currentLocation: string
+  estimatedDelivery?: string
   createdAt?: string
 }
 
@@ -68,7 +69,14 @@ export default function AdminPage() {
     description: '',
   })
   const [showStatusModal, setShowStatusModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showEditDeliveryModal, setShowEditDeliveryModal] = useState(false)
+  const [shipmentToDelete, setShipmentToDelete] = useState<Shipment | null>(null)
+  const [deliveryDateUpdate, setDeliveryDateUpdate] = useState({
+    estimatedDelivery: '',
+  })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Reviews management state
   const [reviews, setReviews] = useState<any[]>([])
@@ -327,6 +335,86 @@ export default function AdminPage() {
       console.error('Error updating status:', error)
       alert('Failed to update status')
       // Refresh to get correct state on error
+      fetchShipments()
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDeleteShipment = async () => {
+    if (!shipmentToDelete) return
+
+    setIsDeleting(true)
+
+    try {
+      const response = await fetch(`/api/admin/shipments/${shipmentToDelete.trackingNumber}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        // Optimistically remove from list
+        setShipments(prevShipments => 
+          prevShipments.filter(shipment => shipment.trackingNumber !== shipmentToDelete.trackingNumber)
+        )
+        
+        alert('Shipment deleted successfully!')
+        setShowDeleteModal(false)
+        setShipmentToDelete(null)
+        
+        // Refresh to ensure consistency
+        setTimeout(() => {
+          fetchShipments()
+        }, 500)
+      } else {
+        const data = await response.json()
+        alert(data.error || 'Failed to delete shipment')
+        // Refresh to get correct state if delete failed
+        fetchShipments()
+      }
+    } catch (error) {
+      console.error('Error deleting shipment:', error)
+      alert('Failed to delete shipment')
+      // Refresh to get correct state on error
+      fetchShipments()
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
+  const handleEditDeliveryDate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!selectedShipment) return
+
+    setIsSubmitting(true)
+
+    try {
+      const response = await fetch(`/api/admin/shipments/${selectedShipment.trackingNumber}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          estimatedDelivery: deliveryDateUpdate.estimatedDelivery,
+        }),
+      })
+
+      if (response.ok) {
+        alert('Estimated delivery date updated successfully!')
+        setShowEditDeliveryModal(false)
+        setDeliveryDateUpdate({ estimatedDelivery: '' })
+        
+        // Refresh shipments list
+        setTimeout(() => {
+          fetchShipments()
+        }, 500)
+      } else {
+        const data = await response.json()
+        alert(data.error || 'Failed to update delivery date')
+        fetchShipments()
+      }
+    } catch (error) {
+      console.error('Error updating delivery date:', error)
+      alert('Failed to update delivery date')
       fetchShipments()
     } finally {
       setIsSubmitting(false)
@@ -726,20 +814,44 @@ export default function AdminPage() {
                             {shipment.currentLocation}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            <button
-                              onClick={() => {
-                                setSelectedShipment(shipment)
-                                setStatusUpdate({
-                                  status: shipment.status,
-                                  location: shipment.currentLocation,
-                                  description: '',
-                                })
-                                setShowStatusModal(true)
-                              }}
-                              className="text-primary hover:text-primary-dark"
-                            >
-                              Update Status
-                            </button>
+                            <div className="flex space-x-3">
+                              <button
+                                onClick={() => {
+                                  setSelectedShipment(shipment)
+                                  setStatusUpdate({
+                                    status: shipment.status,
+                                    location: shipment.currentLocation,
+                                    description: '',
+                                  })
+                                  setShowStatusModal(true)
+                                }}
+                                className="text-primary hover:text-primary-dark"
+                              >
+                                Update Status
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setSelectedShipment(shipment)
+                                  const deliveryDate = shipment.estimatedDelivery 
+                                    ? new Date(shipment.estimatedDelivery).toISOString().split('T')[0]
+                                    : ''
+                                  setDeliveryDateUpdate({ estimatedDelivery: deliveryDate })
+                                  setShowEditDeliveryModal(true)
+                                }}
+                                className="text-blue-600 hover:text-blue-800"
+                              >
+                                Edit Delivery
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setShipmentToDelete(shipment)
+                                  setShowDeleteModal(true)
+                                }}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                Delete
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -883,6 +995,88 @@ export default function AdminPage() {
                     <button
                       type="button"
                       onClick={() => setShowStatusModal(false)}
+                      className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Delete Confirmation Modal */}
+          {showDeleteModal && shipmentToDelete && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">
+                  Delete Shipment
+                </h3>
+                <p className="text-gray-700 mb-6">
+                  Are you sure you want to delete shipment <strong>{shipmentToDelete.trackingNumber}</strong>? 
+                  This action cannot be undone and will also delete all associated tracking history.
+                </p>
+                <div className="flex space-x-4">
+                  <button
+                    onClick={handleDeleteShipment}
+                    disabled={isDeleting}
+                    className="flex-1 px-4 py-2 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                  >
+                    {isDeleting ? 'Deleting...' : 'Delete'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowDeleteModal(false)
+                      setShipmentToDelete(null)
+                    }}
+                    className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Delivery Date Modal */}
+          {showEditDeliveryModal && selectedShipment && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">
+                  Edit Estimated Delivery: {selectedShipment.trackingNumber}
+                </h3>
+                <form onSubmit={handleEditDeliveryDate} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Estimated Delivery Date *
+                    </label>
+                    <input
+                      type="date"
+                      value={deliveryDateUpdate.estimatedDelivery}
+                      onChange={(e) => setDeliveryDateUpdate({ estimatedDelivery: e.target.value })}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary"
+                      required
+                    />
+                    {selectedShipment.estimatedDelivery && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        Current: {new Date(selectedShipment.estimatedDelivery).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex space-x-4">
+                    <button
+                      type="submit"
+                      disabled={isSubmitting}
+                      className="flex-1 px-4 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50"
+                    >
+                      {isSubmitting ? 'Updating...' : 'Update Delivery Date'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowEditDeliveryModal(false)
+                        setDeliveryDateUpdate({ estimatedDelivery: '' })
+                      }}
                       className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 font-semibold rounded-lg hover:bg-gray-300 transition-colors"
                     >
                       Cancel

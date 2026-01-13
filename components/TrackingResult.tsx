@@ -40,7 +40,7 @@ interface TrackingResultProps {
 export default function TrackingResult({ tracking, isLoading, error }: TrackingResultProps) {
   const timelineRef = useRef(null)
   const isInView = useInView(timelineRef, { once: true, margin: '-50px' })
-  const [animatedIndex, setAnimatedIndex] = useState(-1)
+  const [animatedProgress, setAnimatedProgress] = useState(0)
 
   const statusSteps = [
     { key: 'Pending', label: 'Pending', icon: '📋' },
@@ -48,7 +48,6 @@ export default function TrackingResult({ tracking, isLoading, error }: TrackingR
     { key: 'In Transit', label: 'In Transit', icon: '🚚' },
     { key: 'Out for Delivery', label: 'Out for Delivery', icon: '🚛' },
     { key: 'Delivered', label: 'Delivered', icon: '✅' },
-    { key: 'Exception', label: 'Exception', icon: '⚠️' },
   ]
 
   const getStatusIndex = (status: string) => {
@@ -58,21 +57,32 @@ export default function TrackingResult({ tracking, isLoading, error }: TrackingR
 
   const currentStatusIndex = tracking ? getStatusIndex(tracking.status) : -1
 
-  // Animate through completed steps
+  // Calculate progress percentage (0-100%)
+  const progressPercentage = tracking && tracking.status !== 'Exception'
+    ? ((currentStatusIndex + 1) / statusSteps.length) * 100
+    : 0
+
+  // Animate progress bar
   useEffect(() => {
-    if (isInView && currentStatusIndex >= 0 && tracking) {
-      let index = 0
+    if (isInView && tracking && tracking.status !== 'Exception') {
+      const duration = 1500
+      const steps = 60
+      const increment = progressPercentage / steps
+      let current = 0
+      
       const interval = setInterval(() => {
-        if (index <= currentStatusIndex) {
-          setAnimatedIndex(index)
-          index++
-        } else {
+        current += increment
+        if (current >= progressPercentage) {
+          setAnimatedProgress(progressPercentage)
           clearInterval(interval)
+        } else {
+          setAnimatedProgress(current)
         }
-      }, 300) // Delay between each step animation
+      }, duration / steps)
+
       return () => clearInterval(interval)
     }
-  }, [isInView, currentStatusIndex, tracking])
+  }, [isInView, progressPercentage, tracking])
 
   if (isLoading) {
     return (
@@ -97,10 +107,54 @@ export default function TrackingResult({ tracking, isLoading, error }: TrackingR
     return null
   }
 
-  // Calculate progress percentage for the moving package
-  const progressPercentage = tracking.status === 'Exception' 
-    ? 0 
-    : ((currentStatusIndex + 1) / (statusSteps.length - 1)) * 100 // Exclude Exception from progress
+  // Exception status handling
+  if (tracking.status === 'Exception') {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="bg-white rounded-lg shadow-md p-6 md:p-8"
+      >
+        <div className="mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            Tracking Number: <span className="text-primary">{tracking.trackingNumber}</span>
+          </h2>
+          <div className="inline-block px-4 py-2 rounded-full font-semibold bg-red-100 text-red-800">
+            Status: Exception
+          </div>
+        </div>
+
+        <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-center mb-4">
+            <span className="text-3xl mr-3">⚠️</span>
+            <h4 className="text-xl font-bold text-red-800">Exception Status</h4>
+          </div>
+          {tracking.history.length > 0 && (
+            <div className="text-sm text-red-700">
+              <p className="font-semibold mb-1">Location: {tracking.currentLocation}</p>
+              <p className="text-gray-600">{tracking.history[tracking.history.length - 1]?.description || 'An exception has occurred with this shipment.'}</p>
+              <p className="text-gray-500 mt-2">{tracking.history[tracking.history.length - 1]?.timestamp}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Package Details */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h4 className="font-bold text-gray-900 mb-2">Sender</h4>
+            <p className="text-gray-600">{tracking.sender.name}</p>
+            <p className="text-gray-600">{tracking.sender.city}, {tracking.sender.country}</p>
+          </div>
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h4 className="font-bold text-gray-900 mb-2">Receiver</h4>
+            <p className="text-gray-600">{tracking.receiver.name}</p>
+            <p className="text-gray-600">{tracking.receiver.city}, {tracking.receiver.country}</p>
+          </div>
+        </div>
+      </motion.div>
+    )
+  }
 
   return (
     <motion.div
@@ -122,7 +176,6 @@ export default function TrackingResult({ tracking, isLoading, error }: TrackingR
             tracking.status === 'Out for Delivery' ? 'bg-blue-100 text-blue-800' :
             tracking.status === 'In Transit' ? 'bg-yellow-100 text-yellow-800' :
             tracking.status === 'Picked Up' ? 'bg-purple-100 text-purple-800' :
-            tracking.status === 'Exception' ? 'bg-red-100 text-red-800' :
             'bg-gray-100 text-gray-800'
           }`}
         >
@@ -130,130 +183,111 @@ export default function TrackingResult({ tracking, isLoading, error }: TrackingR
         </motion.div>
       </div>
 
-      {/* USPS-Style Animated Timeline */}
+      {/* Horizontal Progress Bar */}
       <div className="mb-8" ref={timelineRef}>
         <h3 className="text-lg font-bold text-gray-900 mb-6">Shipping Status</h3>
         
-        {/* Progress Bar with Moving Package - Only show for non-exception statuses */}
-        {tracking.status !== 'Exception' && (
-          <div className="relative mb-12">
-            {/* Background Progress Line */}
-            <div className="absolute top-1/2 left-0 right-0 h-2 bg-gray-200 rounded-full transform -translate-y-1/2"></div>
-            
-            {/* Animated Progress Fill */}
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${progressPercentage}%` }}
-              transition={{ duration: 1.5, ease: 'easeInOut' }}
-              className="absolute top-1/2 left-0 h-2 bg-primary rounded-full transform -translate-y-1/2"
-            ></motion.div>
+        <div className="relative">
+          {/* Progress Line Background */}
+          <div className="absolute top-12 left-0 right-0 h-2 bg-gray-200 rounded-full"></div>
+          
+          {/* Animated Progress Fill */}
+          <motion.div
+            initial={{ width: 0 }}
+            animate={{ width: `${animatedProgress}%` }}
+            transition={{ duration: 1.5, ease: 'easeInOut' }}
+            className="absolute top-12 left-0 h-2 bg-primary rounded-full"
+          ></motion.div>
 
-            {/* Moving Package Icon */}
+          {/* Moving Package Icon */}
+          <motion.div
+            initial={{ left: 0 }}
+            animate={{ left: `${Math.min(animatedProgress, 100)}%` }}
+            transition={{ duration: 1.5, ease: 'easeInOut' }}
+            className="absolute top-8 transform -translate-x-1/2 z-10"
+          >
             <motion.div
-              initial={{ left: 0 }}
-              animate={{ left: `${Math.min(progressPercentage, 100)}%` }}
-              transition={{ duration: 1.5, ease: 'easeInOut' }}
-              className="absolute top-1/2 transform -translate-x-1/2 -translate-y-1/2"
+              animate={{
+                y: [0, -8, 0],
+                rotate: [0, 5, -5, 0],
+              }}
+              transition={{
+                duration: 1,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+              className="text-3xl"
             >
-              <motion.div
-                animate={{
-                  y: [0, -10, 0],
-                  rotate: [0, 5, -5, 0],
-                }}
-                transition={{
-                  duration: 1,
-                  repeat: Infinity,
-                  ease: 'easeInOut',
-                }}
-                className="text-3xl"
-              >
-                📦
-              </motion.div>
+              📦
             </motion.div>
+          </motion.div>
 
-            {/* Status Steps */}
-            <div className="relative flex justify-between mt-8">
-              {statusSteps.filter(step => step.key !== 'Exception').map((step, index) => {
-                const isCompleted = index <= currentStatusIndex
-                const isCurrent = index === currentStatusIndex
-                const isAnimated = animatedIndex >= index
+          {/* Status Steps */}
+          <div className="relative flex justify-between mt-16 mb-4">
+            {statusSteps.map((step, index) => {
+              const isCompleted = index <= currentStatusIndex
+              const isCurrent = index === currentStatusIndex
+              const stepPosition = (index / (statusSteps.length - 1)) * 100
 
-                return (
-                  <div key={step.key} className="flex flex-col items-center flex-1">
-                    {/* Step Circle */}
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={isAnimated ? { scale: 1 } : { scale: 0 }}
-                      transition={{ type: 'spring', stiffness: 200, delay: index * 0.1 }}
-                      className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center text-xl mb-2 ${
-                        isCompleted ? 'bg-primary' : 'bg-gray-300'
-                      }`}
-                    >
-                      {isCompleted && (
-                        <motion.svg
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          transition={{ delay: 0.2 }}
-                          className="w-6 h-6 text-white"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                        </motion.svg>
-                      )}
-                      {!isCompleted && (
-                        <span className="text-gray-500">{step.icon}</span>
-                      )}
-                    </motion.div>
-
-                    {/* Step Label */}
-                    <motion.div
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={isAnimated ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
-                      transition={{ delay: index * 0.1 + 0.2 }}
-                      className={`text-center text-sm font-semibold ${
-                        isCompleted ? 'text-gray-900' : 'text-gray-400'
-                      }`}
-                    >
-                      {step.label}
-                    </motion.div>
-
-                    {/* Current Status Info */}
-                    {isCurrent && tracking.history.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.5 }}
-                        className="mt-2 text-xs text-gray-600 text-center"
+              return (
+                <div key={step.key} className="flex flex-col items-center" style={{ position: 'absolute', left: `${stepPosition}%`, transform: 'translateX(-50%)' }}>
+                  {/* Step Circle */}
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={isInView ? { scale: 1 } : { scale: 0 }}
+                    transition={{ type: 'spring', stiffness: 200, delay: index * 0.1 }}
+                    className={`relative z-10 w-12 h-12 rounded-full flex items-center justify-center mb-2 ${
+                      isCompleted ? 'bg-primary' : 'bg-gray-300'
+                    }`}
+                  >
+                    {isCompleted && (
+                      <motion.svg
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        transition={{ delay: 0.2 }}
+                        className="w-6 h-6 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
                       >
-                        <p className="font-semibold">{tracking.currentLocation}</p>
-                        <p className="text-gray-500">{tracking.history[tracking.history.length - 1]?.timestamp}</p>
-                      </motion.div>
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </motion.svg>
                     )}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        )}
+                    {!isCompleted && (
+                      <span className="text-gray-500 text-xl">{step.icon}</span>
+                    )}
+                  </motion.div>
 
-        {/* Exception Status Display */}
-        {tracking.status === 'Exception' && (
-          <div className="mb-8 p-6 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center mb-4">
-              <span className="text-3xl mr-3">⚠️</span>
-              <h4 className="text-xl font-bold text-red-800">Exception Status</h4>
-            </div>
-            {tracking.history.length > 0 && (
-              <div className="text-sm text-red-700">
-                <p className="font-semibold mb-1">Location: {tracking.currentLocation}</p>
-                <p className="text-gray-600">{tracking.history[tracking.history.length - 1]?.description || 'An exception has occurred with this shipment.'}</p>
-                <p className="text-gray-500 mt-2">{tracking.history[tracking.history.length - 1]?.timestamp}</p>
-              </div>
-            )}
+                  {/* Step Label */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={isInView ? { opacity: 1, y: 0 } : { opacity: 0, y: 10 }}
+                    transition={{ delay: index * 0.1 + 0.2 }}
+                    className={`text-center text-sm font-semibold max-w-[100px] ${
+                      isCurrent ? 'text-primary' :
+                      isCompleted ? 'text-gray-900' : 'text-gray-400'
+                    }`}
+                  >
+                    {step.label}
+                  </motion.div>
+
+                  {/* Current Status Info */}
+                  {isCurrent && tracking.history.length > 0 && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                      className="mt-2 text-xs text-gray-600 text-center max-w-[120px]"
+                    >
+                      <p className="font-semibold">{tracking.currentLocation}</p>
+                      <p className="text-gray-500">{tracking.history[tracking.history.length - 1]?.timestamp}</p>
+                    </motion.div>
+                  )}
+                </div>
+              )
+            })}
           </div>
-        )}
+        </div>
       </div>
 
       {/* Package Details */}
