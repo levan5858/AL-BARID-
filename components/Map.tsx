@@ -22,7 +22,7 @@ export default function Map({ locations }: MapProps) {
       address: '123 Logistics Street',
       city: 'Dubai',
       country: 'UAE',
-      phone: '+971 4 XXX XXXX',
+      phone: '+971 4 873692',
       email: 'dubai@albarid.com',
       lat: 25.2048,
       lng: 55.2708,

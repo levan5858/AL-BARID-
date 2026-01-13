@@ -32,7 +32,7 @@ export default function ContactPage() {
               <h3 className="text-xl font-bold text-gray-900 mb-2">Phone</h3>
               <p className="text-gray-600 mb-2">24/7 Customer Support</p>
               <p className="text-primary font-semibold">800-ALBARID</p>
-              <p className="text-gray-600 mt-2">+971 4 XXX XXXX</p>
+              <p className="text-gray-600 mt-2">+971 4 873692</p>
             </div>
             <div className="bg-white rounded-lg shadow-md p-6 text-center">
               <div className="flex justify-center mb-4 text-primary">
@@ -80,7 +80,7 @@ export default function ContactPage() {
                 <li>• Email: support@albarid.com</li>
                 <li>• Phone: 800-ALBARID (Toll Free)</li>
                 <li>• Live Chat: Available on website</li>
-                <li>• WhatsApp: +971 XX XXX XXXX</li>
+                <li>• WhatsApp: +971 4 873692</li>
               </ul>
             </div>
             <div className="bg-gray-50 p-6 rounded-lg">

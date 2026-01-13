@@ -63,7 +63,7 @@ export default function Footer() {
             <h4 className="text-white font-semibold mb-4">Contact</h4>
             <ul className="space-y-2">
               <li>Email: info@albarid.com</li>
-              <li>Phone: +971 4 XXX XXXX</li>
+              <li>Phone: +971 4 873692</li>
               <li>Hotline: 800-ALBARID</li>
               <li>24/7 Customer Support</li>
             </ul>
