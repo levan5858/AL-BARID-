@@ -9,9 +9,24 @@ export async function GET(
   try {
     await connectDB()
 
-    const { trackingNumber } = params
+    // Normalize tracking number (uppercase, trim)
+    const normalizedTracking = params.trackingNumber.trim().toUpperCase()
     const shipmentsRef = collections.shipments()
-    const shipmentDoc = await shipmentsRef.doc(trackingNumber).get()
+    
+    // Try exact match first
+    let shipmentDoc = await shipmentsRef.doc(normalizedTracking).get()
+
+    // If not found, try case-insensitive search
+    if (!shipmentDoc.exists) {
+      const allShipmentsSnapshot = await shipmentsRef.limit(500).get()
+      for (const doc of allShipmentsSnapshot.docs) {
+        const data = doc.data()
+        if (data.trackingNumber && data.trackingNumber.toUpperCase() === normalizedTracking) {
+          shipmentDoc = doc
+          break
+        }
+      }
+    }
 
     if (!shipmentDoc.exists) {
       return NextResponse.json(

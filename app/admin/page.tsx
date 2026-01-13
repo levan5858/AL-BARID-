@@ -249,11 +249,22 @@ export default function AdminPage() {
       })
 
       if (response.ok) {
-        alert('Shipment created successfully!')
-        // Refresh shipments list if on manage tab
-        if (activeTab === 'manage') {
-          fetchShipments()
+        const data = await response.json()
+        
+        // Optimistically add to list if on manage tab
+        if (activeTab === 'manage' && data.shipment) {
+          setShipments(prevShipments => [data.shipment, ...prevShipments])
         }
+        
+        alert('Shipment created successfully!')
+        
+        // Wait a bit for Firestore to propagate, then refresh
+        setTimeout(() => {
+          if (activeTab === 'manage') {
+            fetchShipments()
+          }
+        }, 1000) // 1 second delay for Firestore eventual consistency
+        
         // Reset form
         setCreateFormData({
           trackingNumber: '',

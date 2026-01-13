@@ -63,14 +63,17 @@ function TrackPageContent() {
     })
 
     try {
-      const response = await fetch(`/api/tracking/${trackingNumber}`)
+      // Normalize tracking number (uppercase, trim)
+      const normalizedTracking = trackingNumber.trim().toUpperCase()
+      
+      const response = await fetch(`/api/tracking/${normalizedTracking}`)
 
       if (!response.ok) {
         throw new Error('Tracking number not found')
       }
 
       const data = await response.json()
-      setTrackingResults((prev) => new Map(prev).set(trackingNumber, data))
+      setTrackingResults((prev) => new Map(prev).set(normalizedTracking, data))
     } catch (err) {
       console.error('Error fetching tracking:', err)
       setErrors((prev) => new Map(prev).set(trackingNumber, 'Tracking number not found'))

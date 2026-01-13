@@ -16,13 +16,21 @@ interface TrackingStatus {
   }>
   sender: {
     name: string
+    email?: string
+    phone?: string
+    address?: string
     city: string
     country: string
+    postalCode?: string
   }
   receiver: {
     name: string
+    email?: string
+    phone?: string
+    address?: string
     city: string
     country: string
+    postalCode?: string
   }
   packageDetails: {
     weight: number
@@ -298,9 +306,21 @@ export default function TrackingResult({ tracking, isLoading, error }: TrackingR
           transition={{ delay: 0.3 }}
           className="bg-gray-50 p-4 rounded-lg"
         >
-          <h4 className="font-bold text-gray-900 mb-2">Sender</h4>
-          <p className="text-gray-600">{tracking.sender.name}</p>
-          <p className="text-gray-600">{tracking.sender.city}, {tracking.sender.country}</p>
+          <h4 className="font-bold text-gray-900 mb-3">Sender Information</h4>
+          <p className="text-gray-900 font-semibold mb-1">{tracking.sender.name}</p>
+          {tracking.sender.address && (
+            <p className="text-gray-600 text-sm mb-1">{tracking.sender.address}</p>
+          )}
+          <p className="text-gray-600 text-sm mb-1">{tracking.sender.city}, {tracking.sender.country}</p>
+          {tracking.sender.postalCode && (
+            <p className="text-gray-500 text-xs mb-1">Postal Code: {tracking.sender.postalCode}</p>
+          )}
+          {tracking.sender.phone && (
+            <p className="text-gray-500 text-xs mb-1">Phone: {tracking.sender.phone}</p>
+          )}
+          {tracking.sender.email && (
+            <p className="text-gray-500 text-xs">Email: {tracking.sender.email}</p>
+          )}
         </motion.div>
         <motion.div
           initial={{ opacity: 0, x: 20 }}
@@ -308,9 +328,21 @@ export default function TrackingResult({ tracking, isLoading, error }: TrackingR
           transition={{ delay: 0.4 }}
           className="bg-gray-50 p-4 rounded-lg"
         >
-          <h4 className="font-bold text-gray-900 mb-2">Receiver</h4>
-          <p className="text-gray-600">{tracking.receiver.name}</p>
-          <p className="text-gray-600">{tracking.receiver.city}, {tracking.receiver.country}</p>
+          <h4 className="font-bold text-gray-900 mb-3">Receiver Information</h4>
+          <p className="text-gray-900 font-semibold mb-1">{tracking.receiver.name}</p>
+          {tracking.receiver.address && (
+            <p className="text-gray-600 text-sm mb-1">{tracking.receiver.address}</p>
+          )}
+          <p className="text-gray-600 text-sm mb-1">{tracking.receiver.city}, {tracking.receiver.country}</p>
+          {tracking.receiver.postalCode && (
+            <p className="text-gray-500 text-xs mb-1">Postal Code: {tracking.receiver.postalCode}</p>
+          )}
+          {tracking.receiver.phone && (
+            <p className="text-gray-500 text-xs mb-1">Phone: {tracking.receiver.phone}</p>
+          )}
+          {tracking.receiver.email && (
+            <p className="text-gray-500 text-xs">Email: {tracking.receiver.email}</p>
+          )}
         </motion.div>
       </div>
 

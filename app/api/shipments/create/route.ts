@@ -26,14 +26,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Generate unique tracking number
+    // Generate unique tracking number (normalized to uppercase)
     let trackingNumber: string = ''
     let isUnique = false
     let attempts = 0
     const maxAttempts = 10
     
     while (!isUnique && attempts < maxAttempts) {
-      trackingNumber = generateTrackingNumber()
+      trackingNumber = generateTrackingNumber().toUpperCase()
       const shipmentsRef = collections.shipments()
       const existing = await shipmentsRef
         .doc(trackingNumber)
@@ -98,7 +98,14 @@ export async function POST(request: NextRequest) {
 
     // Return shipment data (convert Timestamp to ISO string for JSON response)
     const shipmentResponse = {
-      ...shipmentData,
+      _id: trackingNumber,
+      trackingNumber,
+      sender,
+      receiver,
+      packageDetails,
+      deliveryOptions,
+      status: 'Pending',
+      currentLocation: `${sender.city}, ${sender.country}`,
       estimatedDelivery: estimatedDelivery.toDate().toISOString(),
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
