@@ -78,6 +78,17 @@ export default function AdminPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  // Tracking history edit state
+  const [showHistoryModal, setShowHistoryModal] = useState(false)
+  const [shipmentHistory, setShipmentHistory] = useState<any[]>([])
+  const [editingHistoryEntry, setEditingHistoryEntry] = useState<any | null>(null)
+  const [historyEditForm, setHistoryEditForm] = useState({
+    status: 'Pending' as 'Pending' | 'Picked Up' | 'In Transit' | 'Out for Delivery' | 'Delivered' | 'Exception',
+    location: '',
+    description: '',
+    timestamp: '',
+  })
+
   // Reviews management state
   const [reviews, setReviews] = useState<any[]>([])
   const [isLoadingReviews, setIsLoadingReviews] = useState(false)
@@ -429,6 +440,102 @@ export default function AdminPage() {
       fetchShipments()
     } finally {
       setIsSubmitting(false)
+    }
+  }
+
+  const handleViewHistory = async (shipment: Shipment) => {
+    setSelectedShipment(shipment)
+    try {
+      const response = await fetch(`/api/admin/shipments/${shipment.trackingNumber}`)
+      if (response.ok) {
+        const data = await response.json()
+        setShipmentHistory(data.history || [])
+        setShowHistoryModal(true)
+      } else {
+        alert('Failed to load tracking history')
+      }
+    } catch (error) {
+      console.error('Error fetching history:', error)
+      alert('Failed to load tracking history')
+    }
+  }
+
+  const handleEditHistoryEntry = (entry: any) => {
+    setEditingHistoryEntry(entry)
+    const date = new Date(entry.timestamp)
+    const dateTimeLocal = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16)
+    
+    setHistoryEditForm({
+      status: entry.status,
+      location: entry.location,
+      description: entry.description || '',
+      timestamp: dateTimeLocal,
+    })
+  }
+
+  const handleSaveHistoryEdit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!editingHistoryEntry) return
+
+    setIsSubmitting(true)
+    try {
+      const response = await fetch(`/api/admin/tracking/${editingHistoryEntry.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(historyEditForm),
+      })
+
+      if (response.ok) {
+        alert('Tracking entry updated successfully!')
+        // Refresh history
+        if (selectedShipment) {
+          await handleViewHistory(selectedShipment)
+        }
+        setEditingHistoryEntry(null)
+        setHistoryEditForm({
+          status: 'Pending',
+          location: '',
+          description: '',
+          timestamp: '',
+        })
+      } else {
+        const data = await response.json()
+        alert(data.error || 'Failed to update tracking entry')
+      }
+    } catch (error) {
+      console.error('Error updating tracking entry:', error)
+      alert('Failed to update tracking entry')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleDeleteHistoryEntry = async (entryId: string) => {
+    if (!confirm('Are you sure you want to delete this tracking entry?')) return
+
+    setIsDeleting(true)
+    try {
+      const response = await fetch(`/api/admin/tracking/${entryId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        alert('Tracking entry deleted successfully!')
+        // Refresh history
+        if (selectedShipment) {
+          await handleViewHistory(selectedShipment)
+        }
+      } else {
+        const data = await response.json()
+        alert(data.error || 'Failed to delete tracking entry')
+      }
+    } catch (error) {
+      console.error('Error deleting tracking entry:', error)
+      alert('Failed to delete tracking entry')
+    } finally {
+      setIsDeleting(false)
     }
   }
 
@@ -854,6 +961,12 @@ export default function AdminPage() {
                                 Edit Delivery
                               </button>
                               <button
+                                onClick={() => handleViewHistory(shipment)}
+                                className="text-blue-600 hover:text-blue-800 mr-4"
+                              >
+                                View History
+                              </button>
+                              <button
                                 onClick={() => {
                                   setShipmentToDelete(shipment)
                                   setShowDeleteModal(true)
@@ -1094,6 +1207,160 @@ export default function AdminPage() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {/* Tracking History Modal */}
+          {showHistoryModal && selectedShipment && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    Tracking History: {selectedShipment.trackingNumber}
+                  </h2>
+                  <button
+                    onClick={() => {
+                      setShowHistoryModal(false)
+                      setEditingHistoryEntry(null)
+                      setShipmentHistory([])
+                    }}
+                    className="text-gray-500 hover:text-gray-700 text-2xl"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                {/* History List */}
+                {!editingHistoryEntry && (
+                  <div className="space-y-4">
+                    {shipmentHistory.length === 0 ? (
+                      <p className="text-gray-500">No tracking history available.</p>
+                    ) : (
+                      shipmentHistory.map((entry, index) => (
+                        <div key={entry.id || index} className="border rounded-lg p-4">
+                          <div className="flex justify-between items-start mb-2">
+                            <div>
+                              <h3 className="font-bold text-lg text-primary">{entry.status}</h3>
+                              <p className="text-gray-600 mt-1">
+                                <strong>Location:</strong> {entry.location}
+                              </p>
+                              <p className="text-gray-600">
+                                <strong>Date:</strong> {new Date(entry.timestamp).toLocaleString()}
+                              </p>
+                              {entry.description && (
+                                <p className="text-gray-600 mt-1">
+                                  <strong>Description:</strong> {entry.description}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => handleEditHistoryEntry(entry)}
+                                className="text-blue-600 hover:text-blue-800 font-semibold"
+                              >
+                                Edit
+                              </button>
+                              <button
+                                onClick={() => handleDeleteHistoryEntry(entry.id)}
+                                className="text-red-600 hover:text-red-800 font-semibold"
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
+
+                {/* Edit History Entry Form */}
+                {editingHistoryEntry && (
+                  <form onSubmit={handleSaveHistoryEdit} className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Status
+                      </label>
+                      <select
+                        value={historyEditForm.status}
+                        onChange={(e) => setHistoryEditForm({ ...historyEditForm, status: e.target.value as any })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        required
+                      >
+                        <option value="Pending">Pending</option>
+                        <option value="Picked Up">Picked Up</option>
+                        <option value="In Transit">In Transit</option>
+                        <option value="Out for Delivery">Out for Delivery</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Exception">Exception</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Location
+                      </label>
+                      <input
+                        type="text"
+                        value={historyEditForm.location}
+                        onChange={(e) => setHistoryEditForm({ ...historyEditForm, location: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Date & Time
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={historyEditForm.timestamp}
+                        onChange={(e) => setHistoryEditForm({ ...historyEditForm, timestamp: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        required
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Description
+                      </label>
+                      <textarea
+                        value={historyEditForm.description}
+                        onChange={(e) => setHistoryEditForm({ ...historyEditForm, description: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                        rows={3}
+                      />
+                    </div>
+
+                    <div className="flex gap-4">
+                      <button
+                        type="submit"
+                        disabled={isSubmitting}
+                        className="flex-1 px-6 py-3 bg-primary text-white font-bold rounded-lg hover:bg-primary-dark transition-colors duration-200 disabled:opacity-50"
+                      >
+                        {isSubmitting ? 'Saving...' : 'Save Changes'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingHistoryEntry(null)
+                          setHistoryEditForm({
+                            status: 'Pending',
+                            location: '',
+                            description: '',
+                            timestamp: '',
+                          })
+                        }}
+                        className="flex-1 px-6 py-3 bg-gray-300 text-gray-800 font-bold rounded-lg hover:bg-gray-400 transition-colors duration-200"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </form>
+                )}
               </div>
             </div>
           )}
