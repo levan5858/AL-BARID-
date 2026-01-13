@@ -1,0 +1,1 @@
+when i use this, give me the option to refer a project and have the ai learn avot the project, how we built it and the tech stack behind it so it can use it or replicate the process in the new project.

@@ -126,7 +126,10 @@ export default function AdminPage() {
 
   const fetchShipments = async () => {
     try {
-      const response = await fetch('/api/admin/shipments')
+      // Add cache-busting parameter to ensure fresh data
+      const response = await fetch(`/api/admin/shipments?t=${Date.now()}`, {
+        cache: 'no-store',
+      })
       if (response.ok) {
         const data = await response.json()
         setShipments(data)
@@ -293,6 +296,15 @@ export default function AdminPage() {
       })
 
       if (response.ok) {
+        // Optimistically update the local state immediately
+        setShipments(prevShipments => 
+          prevShipments.map(shipment => 
+            shipment.trackingNumber === selectedShipment.trackingNumber
+              ? { ...shipment, status: statusUpdate.status, currentLocation: statusUpdate.location }
+              : shipment
+          )
+        )
+        
         alert('Status updated successfully!')
         setShowStatusModal(false)
         setStatusUpdate({
@@ -300,14 +312,22 @@ export default function AdminPage() {
           location: '',
           description: '',
         })
-        fetchShipments()
+        
+        // Wait a bit for Firestore to propagate, then fetch fresh data
+        setTimeout(() => {
+          fetchShipments()
+        }, 500)
       } else {
         const data = await response.json()
         alert(data.error || 'Failed to update status')
+        // Refresh to get correct state if update failed
+        fetchShipments()
       }
     } catch (error) {
       console.error('Error updating status:', error)
       alert('Failed to update status')
+      // Refresh to get correct state on error
+      fetchShipments()
     } finally {
       setIsSubmitting(false)
     }

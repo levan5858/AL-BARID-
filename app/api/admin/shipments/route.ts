@@ -29,7 +29,14 @@ export async function GET(request: NextRequest) {
       }
     })
 
-    return NextResponse.json(shipments)
+    // Add cache-control headers to prevent caching
+    return NextResponse.json(shipments, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    })
   } catch (error) {
     console.error('Error fetching shipments:', error)
     return NextResponse.json(
