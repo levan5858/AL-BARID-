@@ -81,9 +81,6 @@ export async function GET(
     // Build response with complete shipment data
     const estimatedDeliveryDate = convertTimestampToDate(shipment.estimatedDelivery)
     
-    // Ensure we use the normalized tracking number from the document
-    const actualTrackingNumber = shipment.trackingNumber || normalizedTracking
-    
     const response = {
       trackingNumber: actualTrackingNumber,
       status: shipment.status || 'Pending',
