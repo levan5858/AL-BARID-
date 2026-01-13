@@ -14,6 +14,15 @@ export const metadata: Metadata = {
   title: 'Al Barid Logistics - Your Trusted Shipping Partner',
   description: 'Al Barid Logistics provides reliable domestic and international shipping services across the Middle East. Track your shipments, create new shipments, and experience excellence in logistics.',
   keywords: 'logistics, shipping, freight, delivery, Middle East, tracking, Al Barid',
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/images/logo/logo.svg', type: 'image/svg+xml', sizes: 'any' },
+    ],
+    apple: [
+      { url: '/apple-icon.svg', sizes: '180x180', type: 'image/svg+xml' },
+    ],
+  },
 }
 
 export default function RootLayout({
